@@ -1,68 +1,40 @@
-class QueueTrack:
-    def __init__(self, track, owner):
-        self.track, self.owner, self.skip_votes = track, owner, []
+import threading
 
-    def to_JSON(self):
-        return {"name": self.track.name, "artist": self.track.artist, "album": self.track.album, "uri": self.track.uri,
-                "owner": self.owner.name, "skip_votes": len(self.skip_votes)}
+import spotify
 
 
-class SongQueue:
-    def __init__(self):
-        self._queue = []
+# Assuming a spotify_appkey.key in the current dir
+session = spotify.Session()
 
-    def add_track(self, user, track, play_next=False):
-        track = QueueTrack(track, user)
+# Process events in the background
+loop = spotify.EventLoop(session)
+loop.start()
 
-        if play_next:
-            if user.tokens >= 2:
-                self._queue.insert(1, track)
-                user.tokens -= 2
+# Connect an audio sink
+audio = spotify.AlsaSink(session)
 
-                return "success"
+# Events for coordination
+logged_in = threading.Event()
 
-            return "fail"
-        else:
-            if user.tokens >= 1:
-                self._queue.append(track)
-                user.tokens -= 1
 
-                return "success"
+def on_connection_state_updated(session):
+    if session.connection.state is spotify.ConnectionState.LOGGED_IN:
+        logged_in.set()
 
-            return "fail"
 
-    def next(self):
-        self._queue.pop(0)
-        return self._queue[0] if len(self._queue) > 0 else None
+session.on(spotify.SessionEvent.CONNECTION_STATE_UPDATED, on_connection_state_updated)
 
-    def skip(self, user):
-        if len(self._queue) > 0 and user.tokens >= 1:
-            self._queue.pop(0)
-            user.tokens -= 1
+session.relogin()
+session.player.seek()
 
-            return "success"
+logged_in.wait()
 
-        return "fail"
 
-    def vote_skip(self, user, index):
-        if index < len(self._queue):
-            if user.uid not in self._queue[index].skip_votes:
-                self._queue[index].skip_votes.append(user.uid)
+def play_song(uri):
+    song = session.get_track(uri).load()
+    session.player.load(song)
+    session.player.play()
 
-                return "success"
 
-        return "fail"
-
-    def remove(self, user, index):
-        if 0 < index < len(self._queue) and user.tokens >= 1:
-            self._queue.pop(index)
-            user.tokens -= 1
-
-            return "success"
-
-        return "fail"
-
-    def to_JSON(self):
-        return [s.to_JSON() for s in self._queue]
-
-queue = SongQueue()
+def register_end_of_track_listener(listener):
+    session.on(spotify.SessionEvent.END_OF_TRACK, listener)

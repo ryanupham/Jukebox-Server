@@ -2,7 +2,7 @@ from flask import Flask
 from flask_restful import Resource, Api
 
 import data
-import player
+import song_queue
 import searching
 import users
 
@@ -23,7 +23,7 @@ class UserAdd(Resource):
 
 class QueueGet(Resource):
     def get(self):
-        return player.queue.to_JSON()
+        return song_queue.queue.to_JSON()
 
 
 class QueueAdd(Resource):
@@ -33,7 +33,7 @@ class QueueAdd(Resource):
         if user is None:
             return "fail"
 
-        return player.queue.add_track(user, data.Track(name, artist, album, uri))
+        return song_queue.queue.add_track(user, data.Track(name, artist, album, uri))
 
 
 class QueueSkip(Resource):
@@ -43,7 +43,7 @@ class QueueSkip(Resource):
         if user is None:
             return "fail"
 
-        return player.queue.skip(user)  # TODO: trigger actual song skip
+        return song_queue.queue.skip(user)
 
 
 class QueueVoteSkip(Resource):
@@ -53,7 +53,7 @@ class QueueVoteSkip(Resource):
         if user is None:
             return "fail"
 
-        return player.queue.vote_skip(user, index)  # TODO: trigger actual song skip if there are enough votes
+        return song_queue.queue.vote_skip(user, index)  # TODO: trigger actual song skip if there are enough votes
 
 
 class QueueRemove(Resource):
@@ -63,12 +63,18 @@ class QueueRemove(Resource):
         if user is None:
             return "fail"
 
-        return player.queue.remove(user, index)
+        return song_queue.queue.remove(user, index)
 
 
 class SearchSong(Resource):
     def get(self, query):
         return searching.find_songs(query)
+
+
+class PlayerState(Resource):
+    def get(self):
+        return "0:00/0:00"  # TODO: Implement way to keep track of current seek time; not included in pyspotify
+
 
 api.add_resource(UserInfo, '/user/info/<string:uid>/')
 api.add_resource(UserAdd, '/user/add/<string:name>/<string:uid>/')
@@ -80,6 +86,8 @@ api.add_resource(QueueVoteSkip, '/queue/vote_skip/<string:uid>/<int:index>/')
 api.add_resource(QueueRemove, '/queue/remove/<string:uid>/<int:index>/')
 
 api.add_resource(SearchSong, '/search/song/<string:query>/')
+
+api.add_resource(PlayerState, '/player/')
 
 
 if __name__ == '__main__':
