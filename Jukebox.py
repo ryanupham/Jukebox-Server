@@ -5,6 +5,7 @@ import data
 import song_queue
 import searching
 import users
+import player
 
 app = Flask(__name__)
 api = Api(app)
@@ -13,7 +14,7 @@ api = Api(app)
 class UserInfo(Resource):
     def get(self, uid):
         user = users.users.get(uid)
-        return user.to_JSON() if user is not None else {}
+        return user.to_JSON() if user is not None else "invalid"
 
 
 class UserAdd(Resource):
@@ -34,6 +35,16 @@ class QueueAdd(Resource):
             return "fail"
 
         return song_queue.queue.add_track(user, data.Track(name, artist, album, uri))
+
+
+class QueueAddNext(Resource):
+    def get(self, uid, name, artist, album, uri):
+        user = users.users.get(uid)
+
+        if user is None:
+            return "fail"
+
+        return song_queue.queue.add_track(user, data.Track(name, artist, album, uri), True)
 
 
 class QueueSkip(Resource):
@@ -73,7 +84,7 @@ class SearchSong(Resource):
 
 class PlayerState(Resource):
     def get(self):
-        return "0:00/0:00"  # TODO: Implement way to keep track of current seek time; not included in pyspotify
+        return player.get_player_state()
 
 
 api.add_resource(UserInfo, '/user/info/<string:uid>/')
@@ -81,6 +92,7 @@ api.add_resource(UserAdd, '/user/add/<string:name>/<string:uid>/')
 
 api.add_resource(QueueGet, '/queue/')
 api.add_resource(QueueAdd, '/queue/add/<string:uid>/<string:name>/<string:artist>/<string:album>/<string:uri>/')
+api.add_resource(QueueAddNext, '/queue/add_next/<string:uid>/<string:name>/<string:artist>/<string:album>/<string:uri>/')
 api.add_resource(QueueSkip, '/queue/skip/<string:uid>/')
 api.add_resource(QueueVoteSkip, '/queue/vote_skip/<string:uid>/<int:index>/')
 api.add_resource(QueueRemove, '/queue/remove/<string:uid>/<int:index>/')
@@ -91,4 +103,4 @@ api.add_resource(PlayerState, '/player/')
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host="0.0.0.0")
