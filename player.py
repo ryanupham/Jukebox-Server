@@ -42,10 +42,16 @@ def play_song(uri):
     start_time = time.time()
 
 
+def stop_playback():
+    session.player.unload()
+
+
 def get_player_state():
     return {"playing": (session.player.state is PlayerState.PLAYING),
             "name": song.name if song is not None else "",
             "artist": song.artists[0].name if song is not None else "",
+            "album": song.album.name if song is not None else "",
+            "album art": "http://o.scdn.co/image/" + song.album.cover_link().url[31:] if song is not None else "",
             "duration": song.duration / 1000 if song is not None else 0,
             "seek": time.time() - start_time}
 

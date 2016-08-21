@@ -18,7 +18,7 @@ class SongQueue:
     def add_track(self, user, track, play_next=False):
         track = QueueTrack(track, user)
 
-        if play_next:
+        if play_next and len(self._queue) > 1:
             if user.tokens >= 2:
                 self._queue.insert(1, track)
                 user.tokens -= 2
@@ -52,7 +52,7 @@ class SongQueue:
 
             return self._queue[0]
 
-        return None
+        player.stop_playback()
 
     def skip(self, user):
         if len(self._queue) > 0 and user.tokens >= 1:
