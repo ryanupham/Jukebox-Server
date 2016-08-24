@@ -34,5 +34,8 @@ class Users:
 
         return None
 
+    def __len__(self):
+        return len(self._users)
+
 
 users = Users()

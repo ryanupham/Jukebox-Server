@@ -64,7 +64,7 @@ class QueueVoteSkip(Resource):
         if user is None:
             return "fail"
 
-        return song_queue.queue.vote_skip(user, index)  # TODO: trigger actual song skip if there are enough votes
+        return song_queue.queue.vote_skip(index, user)
 
 
 class QueueRemove(Resource):
@@ -74,7 +74,7 @@ class QueueRemove(Resource):
         if user is None:
             return "fail"
 
-        return song_queue.queue.remove(user, index)
+        return song_queue.queue.remove(index, user)
 
 
 class SearchSong(Resource):

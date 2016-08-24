@@ -1,4 +1,5 @@
 import player
+import users
 
 
 class QueueTrack:
@@ -54,28 +55,38 @@ class SongQueue:
 
         player.stop_playback()
 
-    def skip(self, user):
-        if len(self._queue) > 0 and user.tokens >= 1:
+    def skip(self, user=None):
+        if len(self._queue) > 0 and (user is None or user.tokens >= 1):
             self.next()
-            user.tokens -= 1
+
+            if user:
+                user.tokens -= 1
 
             return "success"
 
         return "fail"
 
-    def vote_skip(self, user, index):
+    def vote_skip(self, index, user):
         if index < len(self._queue):
             if user.uid not in self._queue[index].skip_votes:
                 self._queue[index].skip_votes.append(user.uid)
+
+                if len(self._queue[index].skip_votes) >= round(len(users.users) * (2/3)):
+                    if index == 0:
+                        self.skip()
+                    else:
+                        self.remove(index)
 
                 return "success"
 
         return "fail"
 
-    def remove(self, user, index):
-        if 0 < index < len(self._queue) and user.tokens >= 1:
+    def remove(self, index, user=None):
+        if 0 < index < len(self._queue) and (user is None or user.tokens >= 1):
             self._queue.pop(index)
-            user.tokens -= 1
+
+            if user:
+                user.tokens -= 1
 
             return "success"
 
